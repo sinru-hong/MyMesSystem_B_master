@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\MyMesSystem_B.props" />
+</Project>

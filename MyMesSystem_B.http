@@ -1,0 +1,6 @@
+@MyMesSystem_B_HostAddress = http://localhost:5107
+
+GET {{MyMesSystem_B_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
