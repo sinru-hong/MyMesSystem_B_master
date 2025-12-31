@@ -45,10 +45,10 @@ namespace MyMesSystem_B.ModelServices
             {
                 // 模擬一個複雜的 Join 查詢（假設有庫存表 Inventory）
                 string sql = @"
-                SELECT P.ProductID, P.ProductName
---, I.StockQty 
-                FROM Products P
-                --LEFT JOIN Inventory I ON P.ProductID = I.ProductID";
+	        SELECT P.ProductID, P.ProductName, P.Price
+	        --, I.StockQty 
+	        FROM Products P
+	        --LEFT JOIN Inventory I ON P.ProductID = I.ProductID";
 
                 SqlDataAdapter da = new SqlDataAdapter(sql, conn);
                 DataTable dt = new DataTable();
