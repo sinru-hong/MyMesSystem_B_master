@@ -25,10 +25,10 @@ var app = builder.Build();// 在這行之後，Services 就不能再修改了
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwagger();
+    //app.UseSwaggerUI();
 }
-
+//app.UseStatusCodePages();
 app.UseHttpsRedirection();
 
 // 在 app.UseHttpsRedirection(); 之後加入
