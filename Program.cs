@@ -7,6 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<ProductModelService>();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<UsersModelService>();
+builder.Services.AddScoped<UsersService>();
+//builder.Services.AddScoped<ProjectsModelService>();
+builder.Services.AddScoped<ProjectsService>();
 
 // 在 var builder = WebApplication.CreateBuilder(args); 之後加入
 builder.Services.AddCors(options =>
