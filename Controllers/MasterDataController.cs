@@ -28,5 +28,27 @@ namespace MyMesSystem_B.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [HttpPost("SaveMasterData")]
+        public async Task<IActionResult> SaveMasterData([FromForm] IFormFile file, [FromForm] string remark, [FromForm] string creator)
+        {
+            try
+            {
+                if (file != null)
+                {
+                    // 實作檔案儲存邏輯，例如：
+                    // var filePath = Path.Combine("Uploads", file.FileName);
+                    // using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
+                }
+
+                // 將資料寫入資料庫...
+
+                return Ok(new { success = true, message = "保存成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }
