@@ -46,5 +46,31 @@ namespace MyMesSystem_B.Controllers
             else
                 return StatusCode(500, new { success = false, message = "儲存失敗: " + result.Message });
         }
+
+        [HttpGet("GetUploadFiles")]
+        public async Task<IActionResult> GetUploadFiles([FromServices] UploadPathService uploadPathService, [FromQuery] string? creator, [FromQuery] string? date)
+        {
+            try
+            {
+                var data = await uploadPathService.GetFiles(creator, date);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "查詢失敗: " + ex.Message });
+            }
+        }
+
+        [HttpGet("DownloadFile")]
+        public IActionResult DownloadFile([FromQuery] string fileName)
+        {
+            string fullPath = Path.Combine(@"C:\Users\洪欣汝\OneDrive\自我學習區\上傳檔案存放區", fileName);
+
+            if (!System.IO.File.Exists(fullPath)) return NotFound("檔案不存在");
+
+            var bytes = System.IO.File.ReadAllBytes(fullPath);
+            // 自動辨識 MIME 類型
+            return File(bytes, "application/octet-stream", fileName);
+        }
     }
 }

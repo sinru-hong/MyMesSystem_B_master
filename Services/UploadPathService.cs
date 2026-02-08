@@ -1,4 +1,5 @@
-﻿using MyMesSystem_B.ModelServices;
+﻿using MyMesSystem_B.Models;
+using MyMesSystem_B.ModelServices;
 
 namespace MyMesSystem_B.Services
 {
@@ -67,6 +68,11 @@ namespace MyMesSystem_B.Services
             {
                 return (false, ex.Message);
             }
+        }
+
+        public async Task<List<UploadPath>> GetFiles(string? creator, string? date)
+        {
+            return await _modelService.GetUploadFilesAsync(creator, date);
         }
     }
 }
