@@ -2,7 +2,7 @@
 
 namespace MyMesSystem_B.Controllers
 {
-    [Route("api/ProjectsApi")] // 💡 直接指定路徑，不再使用 [controller]
+    [Route("api/ProjectsApi")] 
     [ApiController]
     public class ProjectsApiController : ControllerBase
     {
@@ -11,22 +11,18 @@ namespace MyMesSystem_B.Controllers
         {
             var errors = new List<string>();
 
-            // 💡 模擬驗證 1：檢查 EquipmentCode 是否為空
             if (!data.TryGetProperty("EquipmentCode", out var code) || string.IsNullOrWhiteSpace(code.GetString()))
             {
                 errors.Add("設備代碼 (EquipmentCode) 不能為空。");
             }
 
-            // 💡 模擬驗證 2：檢查 Qcqty 是否小於等於 0
             if (!data.TryGetProperty("Qcqty", out var qty) || qty.GetInt32() <= 0)
             {
                 errors.Add("檢驗數量 (Qcqty) 必須大於 0。");
             }
 
-            // 判斷驗證是否通過
             if (errors.Any())
             {
-                // 傳送失敗：得到哪一個欄位輸入有誤
                 return BadRequest(new
                 {
                     success = false,
@@ -35,7 +31,6 @@ namespace MyMesSystem_B.Controllers
                 });
             }
 
-            // 傳送成功：得到正確資料回傳
             return Ok(new
             {
                 success = true,

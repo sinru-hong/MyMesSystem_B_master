@@ -29,7 +29,6 @@ namespace MyMesSystem_B.Controllers
             }
             catch (Exception ex)
             {
-                // 💡 在這裡打斷點，看看 ex.Message 是什麼
                 return StatusCode(500, new { message = ex.Message });
             }
         }
@@ -68,16 +67,14 @@ namespace MyMesSystem_B.Controllers
         [HttpGet("DownloadFile")]
         public IActionResult DownloadFile([FromQuery] string fileName)
         {
-            // 💡 檢查：如果傳進來的已經是完整路徑，就直接用它
             string fullPath = "";
 
             if (fileName.StartsWith(@"\\"))
             {
-                fullPath = fileName; // 直接使用資料庫抓回來的路徑
+                fullPath = fileName; 
             }
             else
             {
-                // 否則才進行拼接
                 string targetFolder = @"\\localhost\CompanyData\上傳檔案存放區";
                 fullPath = Path.Combine(targetFolder, fileName);
             }
@@ -172,7 +169,6 @@ namespace MyMesSystem_B.Controllers
         [HttpPost("ImportExcel")]
         public async Task<IActionResult> ImportExcel([FromServices] UploadPathService uploadPathService, IFormFile file, [FromForm] string creator)
         {
-            // creator 這裡就會接收到前端傳過來的 Emplno
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "請選取 Excel 檔案。" });
 
@@ -180,7 +176,6 @@ namespace MyMesSystem_B.Controllers
             {
                 using (var stream = file.OpenReadStream())
                 {
-                    // 💡 將傳入的 Emplno (creator) 傳給 Service 層
                     var result = await uploadPathService.ImportFromExcelAsync(stream, creator);
                     return Ok(new { message = result.Message, count = result.SuccessCount });
                 }

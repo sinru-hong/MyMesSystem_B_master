@@ -11,14 +11,14 @@ namespace MyMesSystem_B.Controllers
         public IActionResult Get([FromServices] ProductService productService)
         {
             var data = productService.GetFakeProducts();
-            return Ok(data); // 這會回傳 JSON [ { "productID": "A01", ... } ]
+            return Ok(data); 
         }
 
         [HttpGet("complex")]
         public IActionResult GetComplexData([FromServices] ProductService productService)
         {
             var data = productService.GetComplexProductList();
-            return Ok(data); // 雖然是 Hashtable，回傳依然是 [ { "ProductID": "...", "StockQty": 10 }, ... ]
+            return Ok(data); 
         }
 
         [HttpGet("GetUsers")]

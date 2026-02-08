@@ -18,7 +18,6 @@ namespace MyMesSystem_B.ModelServices
             var list = new List<Product>();
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                // 這就是你筆記說的：底層處理開啟、執行語句、回傳
                 string sql = "SELECT ProductID, ProductName, Price FROM Products";
                 SqlDataAdapter da = new SqlDataAdapter(sql, conn);
                 DataTable dt = new DataTable();
@@ -39,11 +38,10 @@ namespace MyMesSystem_B.ModelServices
 
         public IList GetProductsAsHashTable()
         {
-            IList list = new ArrayList(); // 用來存放多個 Hashtable
+            IList list = new ArrayList();
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                // 模擬一個複雜的 Join 查詢（假設有庫存表 Inventory）
                 string sql = @"
 	        SELECT P.ProductID, P.ProductName, P.Price
 	        --, I.StockQty 
@@ -59,7 +57,6 @@ namespace MyMesSystem_B.ModelServices
                     Hashtable ht = new Hashtable();
                     foreach (DataColumn dc in dt.Columns)
                     {
-                        // 將欄位名稱當作 Key，儲存格內容當作 Value
                         ht[dc.ColumnName] = dr[dc];
                     }
                     list.Add(ht);

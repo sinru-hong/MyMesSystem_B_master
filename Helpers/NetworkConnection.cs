@@ -4,7 +4,6 @@
 
     public class NetworkConnection
     {
-        // 呼叫 Windows API
         [DllImport("mpr.dll")]
         private static extern int WNetAddConnection2(NetResource netResource, string password, string username, int flags);
 
@@ -25,13 +24,12 @@
         {
             var nr = new NetResource
             {
-                Type = 1, // RESOURCETYPE_DISK
+                Type = 1, 
                 RemoteName = remotePath
             };
 
-            // 💡 執行登入動作
             int result = WNetAddConnection2(nr, password, username, 0);
-            return result == 0; // 0 代表成功
+            return result == 0; 
         }
     }
 }

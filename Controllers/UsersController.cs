@@ -5,23 +5,21 @@ using MyMesSystem_B.Services;
 
 namespace MyMesSystem_B.Controllers
 {
-    [ApiController] // 確保支援 API 特性（如自動模型驗證）
-    [Route("api/[controller]")] // 這裡定義了 api/auth 的路徑
+    [ApiController] 
+    [Route("api/[controller]")] 
     public class UsersController : ControllerBase
     {
         //private static string MockPassword = "1234";
         //private static bool MockIsFirstLogin = true;
 
-        [HttpPost("login")] // 這會讓網址變成 api/auth/login
+        [HttpPost("login")] 
         public IActionResult Login([FromBody] LoginRequest request, [FromServices] UsersService usersService)
         {
             var data = usersService.GetUsers();
-            // 1. 驗證帳號密碼 (範例：admin / 1234)
             foreach (Hashtable user in data)
             {
                 var EmplNo = user["EmplNo"]?.ToString();
                 var PasswordHash = user["PasswordHash"]?.ToString();
-                // 確保欄位名稱與資料庫一致 (例如 "Username")
                 if (EmplNo == request.EmplNo &&
                     PasswordHash == request.Password)
                 {

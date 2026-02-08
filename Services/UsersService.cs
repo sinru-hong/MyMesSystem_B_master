@@ -12,7 +12,6 @@ namespace MyMesSystem_B.Services
         }
         public IList GetUsers(string userKeyword = "")
         {
-            // 這裡可以直接回傳 ModelService 抓回來的 Hashtable 清單
             return _modelService.GetUsers(userKeyword);
         }
     }
