@@ -72,5 +72,12 @@ namespace MyMesSystem_B.Controllers
             // 自動辨識 MIME 類型
             return File(bytes, "application/octet-stream", fileName);
         }
+
+        [HttpPost("UpdateMasterData")]
+        public async Task<IActionResult> UpdateMasterData([FromServices] UploadPathService uploadPathService, [FromForm] int id, [FromForm] string? remark, [FromForm] string modifier)
+        {
+            var result = await uploadPathService.UpdateData(id, remark, modifier);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
     }
 }

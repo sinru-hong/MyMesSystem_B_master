@@ -47,16 +47,37 @@ namespace MyMesSystem_B.ModelServices
                 // 1. 基本 SQL 語句
                 string sql = "SELECT * FROM UploadPath WHERE 1=1";
 
-                // 2. 動態拼接過濾條件 (安全起見仍使用參數化)
-                if (!string.IsNullOrEmpty(creator)) sql += " AND Creator LIKE @Creator";
-                if (!string.IsNullOrEmpty(date)) sql += " AND CAST(CreateTime AS DATE) = @Date";
+                // 2. 動態拼接過濾條件
+                if (!string.IsNullOrEmpty(creator))
+                {
+                    sql += " AND Creator LIKE @Creator";
+                }
+
+                // 💡 調整日期查詢邏輯：使用範圍比對
+                if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out DateTime startDate))
+                {
+                    // 取得隔天的日期 (當天 00:00:00 到 隔天 00:00:00)
+                    DateTime endDate = startDate.AddDays(1);
+
+                    sql += " AND CreateTime >= @StartDate AND CreateTime < @EndDate";
+                }
 
                 sql += " ORDER BY CreateTime DESC";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    if (!string.IsNullOrEmpty(creator)) cmd.Parameters.AddWithValue("@Creator", $"%{creator}%");
-                    if (!string.IsNullOrEmpty(date)) cmd.Parameters.AddWithValue("@Date", date);
+                    // 參數化查詢
+                    if (!string.IsNullOrEmpty(creator))
+                    {
+                        cmd.Parameters.AddWithValue("@Creator", $"%{creator}%");
+                    }
+
+                    if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out startDate))
+                    {
+                        // 設定當天與隔天的參數
+                        cmd.Parameters.AddWithValue("@StartDate", startDate.Date); // 2026-02-08 00:00:00
+                        cmd.Parameters.AddWithValue("@EndDate", startDate.Date.AddDays(1)); // 2026-02-09 00:00:00
+                    }
 
                     if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
 
@@ -79,6 +100,29 @@ namespace MyMesSystem_B.ModelServices
                 }
             }
             return list;
+        }
+
+        public async Task<int> UpdateUploadPathAsync(int id, string? remark, string modifier)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                string sql = @"
+            UPDATE UploadPath 
+            SET Remark = @Remark, 
+                LastModifier = @Modifier, 
+                LastModifyTime = GETDATE()
+            WHERE Id = @Id";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@Remark", (object)remark ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Modifier", modifier);
+
+                    if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
+                    return await cmd.ExecuteNonQueryAsync();
+                }
+            }
         }
     }
 }

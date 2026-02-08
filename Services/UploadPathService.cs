@@ -74,5 +74,11 @@ namespace MyMesSystem_B.Services
         {
             return await _modelService.GetUploadFilesAsync(creator, date);
         }
+
+        public async Task<(bool Success, string Message)> UpdateData(int id, string? remark, string modifier)
+        {
+            int rows = await _modelService.UpdateUploadPathAsync(id, remark, modifier);
+            return rows > 0 ? (true, "修改成功") : (false, "找不到該筆資料");
+        }
     }
 }
