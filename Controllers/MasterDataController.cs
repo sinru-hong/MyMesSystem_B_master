@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using Microsoft.AspNetCore.Mvc;
 using MyMesSystem_B.Models;
+using MyMesSystem_B.ModelServices;
 using MyMesSystem_B.Services;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
@@ -78,6 +79,21 @@ namespace MyMesSystem_B.Controllers
         {
             var result = await uploadPathService.UpdateData(id, remark, modifier);
             return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("DeleteMasterData")]
+        public async Task<IActionResult> DeleteMasterData([FromServices] UploadPathModelService uploadPathModelService, [FromForm] int id, [FromForm] string modifier)
+        {
+            try
+            {
+                int rows = await uploadPathModelService.DeleteUploadPathAsync(id, modifier);
+                if (rows > 0) return Ok(new { message = "刪除成功" });
+                return BadRequest(new { message = "找不到該筆資料" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }

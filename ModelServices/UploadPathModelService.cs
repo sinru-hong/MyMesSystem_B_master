@@ -45,7 +45,7 @@ namespace MyMesSystem_B.ModelServices
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 // 1. 基本 SQL 語句
-                string sql = "SELECT * FROM UploadPath WHERE 1=1";
+                string sql = "SELECT * FROM UploadPath WHERE IsDeleted = 0";
 
                 // 2. 動態拼接過濾條件
                 if (!string.IsNullOrEmpty(creator))
@@ -117,6 +117,29 @@ namespace MyMesSystem_B.ModelServices
                 {
                     cmd.Parameters.AddWithValue("@Id", id);
                     cmd.Parameters.AddWithValue("@Remark", (object)remark ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Modifier", modifier);
+
+                    if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
+                    return await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task<int> DeleteUploadPathAsync(int id, string modifier)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                // 💡 軟刪除：更新 IsDeleted 狀態，並記錄是誰刪除的
+                string sql = @"
+            UPDATE UploadPath 
+            SET IsDeleted = 1, 
+                LastModifier = @Modifier, 
+                LastModifyTime = GETDATE()
+            WHERE Id = @Id";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", id);
                     cmd.Parameters.AddWithValue("@Modifier", modifier);
 
                     if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
