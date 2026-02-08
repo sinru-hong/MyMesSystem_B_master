@@ -6,6 +6,7 @@ using MyMesSystem_B.ModelServices;
 using MyMesSystem_B.Services;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 using ClosedXML.Excel;
+using MyMesSystem_B.Helpers;
 
 namespace MyMesSystem_B.Controllers
 {
@@ -67,13 +68,37 @@ namespace MyMesSystem_B.Controllers
         [HttpGet("DownloadFile")]
         public IActionResult DownloadFile([FromQuery] string fileName)
         {
-            string fullPath = Path.Combine(@"C:\Users\洪欣汝\OneDrive\自我學習區\上傳檔案存放區", fileName);
+            // 💡 檢查：如果傳進來的已經是完整路徑，就直接用它
+            string fullPath = "";
 
-            if (!System.IO.File.Exists(fullPath)) return NotFound("檔案不存在");
+            if (fileName.StartsWith(@"\\"))
+            {
+                fullPath = fileName; // 直接使用資料庫抓回來的路徑
+            }
+            else
+            {
+                // 否則才進行拼接
+                string targetFolder = @"\\localhost\CompanyData\上傳檔案存放區";
+                fullPath = Path.Combine(targetFolder, fileName);
+            }
 
-            var bytes = System.IO.File.ReadAllBytes(fullPath);
-            // 自動辨識 MIME 類型
-            return File(bytes, "application/octet-stream", fileName);
+            try
+            {
+                string remotePath = @"\\localhost\CompanyData";
+                NetworkConnection.Connect(remotePath, @"洪欣汝", "haz123");
+
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    return NotFound($"檔案不存在。請檢查路徑：{fullPath}");
+                }
+
+                var bytes = System.IO.File.ReadAllBytes(fullPath);
+                return File(bytes, "application/octet-stream", Path.GetFileName(fullPath));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"錯誤: {ex.Message}");
+            }
         }
 
         [HttpPost("UpdateMasterData")]
@@ -141,6 +166,28 @@ namespace MyMesSystem_B.Controllers
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         $"Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
                 }
+            }
+        }
+
+        [HttpPost("ImportExcel")]
+        public async Task<IActionResult> ImportExcel([FromServices] UploadPathService uploadPathService, IFormFile file, [FromForm] string creator)
+        {
+            // creator 這裡就會接收到前端傳過來的 Emplno
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "請選取 Excel 檔案。" });
+
+            try
+            {
+                using (var stream = file.OpenReadStream())
+                {
+                    // 💡 將傳入的 Emplno (creator) 傳給 Service 層
+                    var result = await uploadPathService.ImportFromExcelAsync(stream, creator);
+                    return Ok(new { message = result.Message, count = result.SuccessCount });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
             }
         }
     }
