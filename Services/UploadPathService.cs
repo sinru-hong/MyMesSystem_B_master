@@ -20,9 +20,9 @@ namespace MyMesSystem_B.Services
                 string fileNameForDb = (file != null) ? file.FileName : (filePath ?? "");
 
                 // B. 先存入資料庫
-                int rows = await _modelService.AddUploadPathAsync(fileNameForDb, remark, creator ?? "Unknown");
+                int newId = await _modelService.AddUploadPathAsync(fileNameForDb, remark, creator ?? "Unknown");
 
-                if (rows <= 0) return (false, "資料庫寫入失敗");
+                if (newId <= 0) return (false, "資料庫寫入失敗");
 
                 // C. 處理檔案複製 (C:\Users\洪欣汝\OneDrive\自我學習區\上傳檔案存放區)
                 if (file != null && file.Length > 0)
@@ -48,6 +48,11 @@ namespace MyMesSystem_B.Services
                             await file.CopyToAsync(stream);
                             await stream.FlushAsync(); // 確保緩衝區寫入硬碟
                         }
+
+                        // 💡 關鍵步驟：檔案存完後，更新資料庫裡的 FilePath 為完整路徑
+                        await _modelService.UpdateFilePathAsync(newId, fullSavePath);
+
+                        Console.WriteLine($"實體路徑已更新回資料庫: {fullSavePath}");
 
                         Console.WriteLine($"檔案成功儲存至: {fullSavePath}");
                     }

@@ -14,27 +14,42 @@ namespace MyMesSystem_B.ModelServices
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public async Task<int> AddUploadPathAsync(string filePath, string? remark, string creator)
+        public async Task<int> AddUploadPathAsync(string fileName, string? remark, string creator)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                // SQL 原生指令
+                // 💡 使用 SCOPE_IDENTITY() 取得剛產生的自增 ID
                 string sql = @"
-                    INSERT INTO UploadPath (FilePath, Remark, Creator, CreateTime, LastModifier, LastModifyTime)
-                    VALUES (@FilePath, @Remark, @Creator, GETDATE(), @LastModifier, GETDATE())";
+            INSERT INTO UploadPath (FilePath, Remark, Creator, CreateTime, IsDeleted)
+            VALUES (@FilePath, @Remark, @Creator, GETDATE(), 0);
+            SELECT CAST(SCOPE_IDENTITY() as int);";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    // 綁定參數防止 SQL 注入
-                    cmd.Parameters.AddWithValue("@FilePath", filePath);
+                    cmd.Parameters.AddWithValue("@FilePath", fileName); // 初始先存檔名
                     cmd.Parameters.AddWithValue("@Remark", (object)remark ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Creator", creator);
-                    cmd.Parameters.AddWithValue("@LastModifier", creator);
 
                     if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
+                    // 💡 改用 ExecuteScalarAsync 取得回傳的 ID
+                    object result = await cmd.ExecuteScalarAsync();
+                    return (result != null) ? (int)result : 0;
+                }
+            }
+        }
 
-                    // 執行並回傳受影響筆數 (1 代表成功)
-                    return await cmd.ExecuteNonQueryAsync();
+        // 💡 新增一個更新路徑的專用方法
+        public async Task UpdateFilePathAsync(int id, string fullPath)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                string sql = "UPDATE UploadPath SET FilePath = @FilePath WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@FilePath", fullPath);
+                    if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
         }
@@ -147,5 +162,63 @@ namespace MyMesSystem_B.ModelServices
                 }
             }
         }
+
+        using ExcelDataReader;
+using System.IO;
+
+public async Task<(int SuccessCount, string Message)> ImportFromExcel(Stream excelStream, string creator)
+    {
+        int successCount = 0;
+        string rootPath = @"C:\Users\洪欣汝\OneDrive\自我學習區";
+        string targetFolder = Path.Combine(rootPath, "上傳檔案存放區");
+
+        // 1. 確保目標資料夾存在
+        if (!Directory.Exists(targetFolder))
+        {
+            Directory.CreateDirectory(targetFolder);
+        }
+
+        // 2. 開始讀取 Excel
+        using (var reader = ExcelReaderFactory.CreateReader(excelStream))
+        {
+            // 略過第一行標題
+            reader.Read();
+
+            while (reader.Read())
+            {
+                // 💡 關鍵：取得第二個欄位 (Index 為 1) 的檔案原始路徑
+                string? sourcePath = reader.GetValue(1)?.ToString();
+                string? remark = reader.GetValue(2)?.ToString(); // 假設第三欄是備註
+
+                if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
+                {
+                    Console.WriteLine($"跳過無效路徑: {sourcePath}");
+                    continue;
+                }
+
+                try
+                {
+                    // 3. 準備複製檔案
+                    string fileName = Path.GetFileName(sourcePath);
+                    string finalSavePath = Path.Combine(targetFolder, fileName);
+
+                    // 執行複製 (若檔案已存在則覆蓋)
+                    File.Copy(sourcePath, finalSavePath, true);
+
+                    // 4. 寫入資料庫並取得 ID (沿用你之前的邏輯)
+                    // 這裡建議直接存入最終路徑 finalSavePath
+                    int newId = await _modelService.AddUploadPathAsync(fileName, remark, creator);
+                    await _modelService.UpdateFilePathAsync(newId, finalSavePath);
+
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"檔案 {sourcePath} 導入失敗: {ex.Message}");
+                }
+            }
+        }
+        return (successCount, $"成功導入 {successCount} 筆資料");
     }
+}
 }

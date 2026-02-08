@@ -1,9 +1,11 @@
 ﻿using System.Collections;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using MyMesSystem_B.Models;
 using MyMesSystem_B.ModelServices;
 using MyMesSystem_B.Services;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
+using ClosedXML.Excel;
 
 namespace MyMesSystem_B.Controllers
 {
@@ -93,6 +95,52 @@ namespace MyMesSystem_B.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+        [HttpGet("ExportToExcel")]
+        public async Task<IActionResult> ExportToExcel([FromServices] UploadPathService uploadPathService, [FromQuery] string? creator, [FromQuery] string? date)
+        {
+            var data = await uploadPathService.GetFiles(creator, date);
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("資料匯出");
+
+                // 1. 設定標題
+                worksheet.Cell(1, 1).Value = "序號";
+                worksheet.Cell(1, 2).Value = "檔案路徑";
+                worksheet.Cell(1, 3).Value = "備註";
+                worksheet.Cell(1, 4).Value = "建立人";
+                worksheet.Cell(1, 5).Value = "建立時間";
+                worksheet.Cell(1, 6).Value = "修改人";
+                worksheet.Cell(1, 7).Value = "修改時間";
+
+                // 2. 填入資料
+                for (int i = 0; i < data.Count; i++)
+                {
+                    var item = data[i];
+                    worksheet.Cell(i + 2, 1).Value = i + 1;
+                    worksheet.Cell(i + 2, 2).Value = item.FilePath;
+                    worksheet.Cell(i + 2, 3).Value = item.Remark;
+                    worksheet.Cell(i + 2, 4).Value = item.Creator;
+                    worksheet.Cell(i + 2, 5).Value = item.CreateTime;
+                    worksheet.Cell(i + 2, 6).Value = item.LastModifier;
+                    worksheet.Cell(i + 2, 7).Value = item.LastModifyTime;
+                }
+
+                // 💡 3. 關鍵步驟：根據內容自動調整所有欄位寬度
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return File(content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        $"Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                }
             }
         }
     }
