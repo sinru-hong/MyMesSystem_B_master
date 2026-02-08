@@ -11,7 +11,8 @@ builder.Services.AddScoped<UsersModelService>();
 builder.Services.AddScoped<UsersService>();
 //builder.Services.AddScoped<ProjectsModelService>();
 builder.Services.AddScoped<ProjectsService>();
-
+builder.Services.AddScoped<UploadPathModelService>();
+builder.Services.AddScoped<UploadPathService>();
 // 在 var builder = WebApplication.CreateBuilder(args); 之後加入
 builder.Services.AddCors(options =>
 {
