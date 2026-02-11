@@ -16,8 +16,7 @@ namespace MyMesSystem_B.Services
 
         public List<Product> GetFakeProducts()
         {
-            List<Product> returnList = _modelService.GetProductsFromDb();
-            return returnList;
+            return _modelService.GetProductsFromDb();
         }
 
         public IList GetComplexProductList()

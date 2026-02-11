@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using MyMesSystem_B.Services;
@@ -12,6 +14,23 @@ namespace MyMesSystem_B.Controllers
         //private static string MockPassword = "1234";
         //private static bool MockIsFirstLogin = true;
 
+        public string GetMd5Hash(string input)
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                // 將 Byte 陣列轉換為 16 進位字串
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("x2"));
+                }
+                return sb.ToString();
+            }
+        }
+
         [HttpPost("login")] 
         public IActionResult Login([FromBody] LoginRequest request, [FromServices] UsersService usersService)
         {
@@ -20,8 +39,9 @@ namespace MyMesSystem_B.Controllers
             {
                 var EmplNo = user["EmplNo"]?.ToString();
                 var PasswordHash = user["PasswordHash"]?.ToString();
-                if (EmplNo == request.EmplNo &&
-                    PasswordHash == request.Password)
+                string encryptedRequestPassword = GetMd5Hash(request.Password);
+
+                if (EmplNo == request.EmplNo && PasswordHash == encryptedRequestPassword)
                 {
                     return Ok(new LoginResponse
                     {

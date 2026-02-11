@@ -1,5 +1,8 @@
-﻿using MyMesSystem_B.ModelServices;
+﻿using ClosedXML.Parser;
+using MyMesSystem_B.ModelServices;
 using MyMesSystem_B.Services;
+using Microsoft.EntityFrameworkCore;
+using MyMesSystem_B.Data; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +26,13 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<MyDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
