@@ -84,7 +84,10 @@ namespace MyMesSystem_B.Services
         public async Task<(bool Success, string Message)> UpdateData(int id, string? remark, string modifier)
         {
             int rows = await _modelService.UpdateUploadPathAsync(id, remark, modifier);
-            return rows > 0 ? (true, "修改成功") : (false, "找不到該筆資料");
+
+            return rows > 0
+                ? (true, "修改成功")
+                : (false, "找不到該筆資料或資料未變更");
         }
 
         public async Task<(int SuccessCount, string Message)> ImportFromExcelAsync(Stream excelStream, string creator)

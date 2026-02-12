@@ -101,8 +101,13 @@ namespace MyMesSystem_B.Controllers
         [HttpPost("UpdateMasterData")]
         public async Task<IActionResult> UpdateMasterData([FromServices] UploadPathService uploadPathService, [FromForm] int id, [FromForm] string? remark, [FromForm] string modifier)
         {
+            if (id <= 0) return BadRequest(new { Success = false, Message = "無效的 ID" });
+
             var result = await uploadPathService.UpdateData(id, remark, modifier);
-            return result.Success ? Ok(result) : BadRequest(result);
+
+            return result.Success
+                ? Ok(new { success = true, message = result.Message })
+                : BadRequest(new { success = false, message = result.Message });
         }
 
         [HttpPost("DeleteMasterData")]

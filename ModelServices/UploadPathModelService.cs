@@ -49,24 +49,45 @@ namespace MyMesSystem_B.ModelServices
                 }
             }
         }
-
-        public async Task<List<UploadPath>> GetUploadFilesAsync(string? creator, string? date)
+        public async Task<List<UploadPath>> GetUploadFilesAsync(string? creator, string? dateRange)
         {
             var list = new List<UploadPath>();
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 string sql = "SELECT * FROM UploadPath WHERE IsDeleted = 0";
 
+                // 1. 處理人員關鍵字
                 if (!string.IsNullOrEmpty(creator))
                 {
                     sql += " AND Creator LIKE @Creator";
                 }
 
-                if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out DateTime startDate))
-                {
-                    DateTime endDate = startDate.AddDays(1);
+                // 2. 處理日期範疇解析
+                DateTime? startDate = null;
+                DateTime? endDate = null;
 
-                    sql += " AND CreateTime >= @StartDate AND CreateTime < @EndDate";
+                if (!string.IsNullOrEmpty(dateRange))
+                {
+                    // 利用 Flatpickr 預設的分隔符號拆分字串 (例如 "2026/02/01 至 2026/02/11")
+                    var dates = dateRange.Split(new[] { " 至 ", " to " }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (dates.Length == 2)
+                    {
+                        // 成功拆分出兩個日期
+                        if (DateTime.TryParse(dates[0], out DateTime start) && DateTime.TryParse(dates[1], out DateTime end))
+                        {
+                            startDate = start.Date;
+                            endDate = end.Date.AddDays(1); // 包含結束當天的整天
+                            sql += " AND CreateTime >= @StartDate AND CreateTime < @EndDate";
+                        }
+                    }
+                    else if (dates.Length == 1 && DateTime.TryParse(dates[0], out DateTime singleDate))
+                    {
+                        // 若只選了一天
+                        startDate = singleDate.Date;
+                        endDate = singleDate.Date.AddDays(1);
+                        sql += " AND CreateTime >= @StartDate AND CreateTime < @EndDate";
+                    }
                 }
 
                 sql += " ORDER BY CreateTime DESC";
@@ -74,18 +95,16 @@ namespace MyMesSystem_B.ModelServices
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     if (!string.IsNullOrEmpty(creator))
-                    {
                         cmd.Parameters.AddWithValue("@Creator", $"%{creator}%");
-                    }
 
-                    if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out startDate))
+                    if (startDate.HasValue && endDate.HasValue)
                     {
-                        cmd.Parameters.AddWithValue("@StartDate", startDate.Date); 
-                        cmd.Parameters.AddWithValue("@EndDate", startDate.Date.AddDays(1)); 
+                        cmd.Parameters.AddWithValue("@StartDate", startDate.Value);
+                        cmd.Parameters.AddWithValue("@EndDate", endDate.Value);
                     }
 
                     if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
-
+                    
                     using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
@@ -106,7 +125,6 @@ namespace MyMesSystem_B.ModelServices
             }
             return list;
         }
-
         public async Task<int> UpdateUploadPathAsync(int id, string? remark, string modifier)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
@@ -120,9 +138,10 @@ namespace MyMesSystem_B.ModelServices
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Id", id);
-                    cmd.Parameters.AddWithValue("@Remark", (object)remark ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Modifier", modifier);
+                    // 明確指定參數型別，對效能更好
+                    cmd.Parameters.Add("@Id", SqlDbType.Int).Value = id;
+                    cmd.Parameters.Add("@Remark", SqlDbType.NVarChar).Value = (object)remark ?? DBNull.Value;
+                    cmd.Parameters.Add("@Modifier", SqlDbType.NVarChar).Value = modifier;
 
                     if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
                     return await cmd.ExecuteNonQueryAsync();

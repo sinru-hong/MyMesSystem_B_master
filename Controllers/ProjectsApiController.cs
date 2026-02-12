@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MyMesSystem_B.Controllers
 {
@@ -23,40 +24,36 @@ namespace MyMesSystem_B.Controllers
 
             if (errors.Any())
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "資料驗證失敗",
-                    errorDetails = errors
-                });
+                // 💡 使用 new JsonResult 確保回傳 JSON 結構，並手動設定 StatusCode
+                //return new JsonResult(new
+                //{
+                //    success = false,
+                //    message = "資料驗證失敗",
+                //    errorDetails = errors
+                //})
+                return Ok(new { success = false, message = "資料驗證失敗", echoData = errors, StatusCode = 400 });
+                //{ StatusCode = 400 };
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = "API 處理成功",
-                echoData = data
-            });
+            return Ok(new { success = true, message = "API 處理成功", echoData = data, StatusCode = 200 });
         }
 
         [HttpGet("ProcessGetDemo")]
-        public IActionResult ProcessGetDemo([FromQuery] string message)
+        public IActionResult ProcessGetDemo([FromQuery] string? message)
         {
             if (string.IsNullOrEmpty(message))
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "GET 請求失敗：message 參數不得為空"
-                });
+                //// 💡 同樣使用 new JsonResult
+                //return new JsonResult(new
+                //{
+                //    success = false,
+                //    message = "GET 請求失敗：message 參數不得為空"
+                //})
+                //{ StatusCode = 400 };
+                return Ok(new { success = false, message = "GET 請求失敗", receivedValue = "message 參數不得為空", StatusCode = 400 });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = "這是 GET 請求的回應",
-                receivedValue = message
-            });
+            return Ok(new { success = true, message = "這是 GET 請求的回應", receivedValue = message, StatusCode = 200 });
         }
     }
 }
